@@ -8,7 +8,7 @@
 #include <netdb.h>
 #include <unistd.h>
 
-Socket::Socket()
+Socket::Socket() : MAXREAD(2048)
 {
     if ((_socket = socket(PF_INET, SOCK_STREAM, IPPROTO_TCP)) == -1) {
         throw SocketFailure();
@@ -45,6 +45,30 @@ void Socket::connect(std::string host, uint16_t port)
 void Socket::disconnect()
 {
     close(_socket);
+}
+
+std::string Socket::read() {
+   char buf[MAXREAD];
+   unsigned int bytes;
+
+   if ((bytes = recv(_socket, buf, MAXREAD - 1, 0)) == -1) {
+      throw SocketFailure();
+   }
+
+   if (bytes > 0) {
+      return std::string(buf);
+   }
+
+   // If no bytes are read then close socket
+   disconnect();
+
+   return "";
+}
+
+void Socket::write(std::string data) {
+   if (send(_socket, data.c_str(), data.size(), 0) == -1) {
+      throw SocketFailure();
+   }
 }
 
 const char *Socket::SocketFailure::what() const noexcept
